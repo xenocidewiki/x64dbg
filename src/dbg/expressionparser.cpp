@@ -874,7 +874,8 @@ bool ExpressionParser::Calculate(duint & value, bool signedcalc, bool allowassig
         {
             const auto & name = token.data();
             int argc;
-            if(!ExpressionFunctions::GetArgc(name, argc))
+            bool strFunction;
+            if(!ExpressionFunctions::GetArgc(name, argc, strFunction))
                 return false;
             if(int(stack.size()) < argc)
                 return false;
