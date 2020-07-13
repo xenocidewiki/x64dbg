@@ -96,14 +96,14 @@
     <Filter Include="Header Files\Symbols">
       <UniqueIdentifier>{1f9e6c1d-74b2-4f72-bbe2-5fa68094d5fd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Third Party\WinInet-Downloader">
+      <UniqueIdentifier>{cdf955c6-b066-4b06-87f0-7a02b9bbfc55}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Third Party">
       <UniqueIdentifier>{73b6410d-7eef-4131-a04f-56abc14d84f5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Third Party\WinInet-Downloader">
       <UniqueIdentifier>{e47a911a-a6f6-415d-9eec-4f79f478d0a0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Third Party\WinInet-Downloader">
-      <UniqueIdentifier>{cdf955c6-b066-4b06-87f0-7a02b9bbfc55}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Third Party\msdia">
       <UniqueIdentifier>{dc4f0ea0-8d28-4d9e-a8ac-901dd274787d}</UniqueIdentifier>

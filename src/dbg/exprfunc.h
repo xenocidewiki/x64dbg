@@ -81,4 +81,5 @@ namespace Exprfunc
     duint exinfo(duint index);
 
     duint strcmp(const char* addr, const char* str);
+    duint strstr(const char* addrStr, const char* str);
 }

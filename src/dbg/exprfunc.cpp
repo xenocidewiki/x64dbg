@@ -188,7 +188,7 @@ namespace Exprfunc
         BASIC_INSTRUCTION_INFO info;
         if(!disasmfast(addr, &info, true))
             return 0;
-        return strstr(info.instruction, "ret") != nullptr;
+        return ::strstr(info.instruction, "ret") != nullptr;
     }
 
     duint disiscall(duint addr)
@@ -471,5 +471,15 @@ namespace Exprfunc
         std::vector<char> cmp(strlen(str) + 1);
         DbgMemRead(addr, cmp.data(), cmp.size());
         return ::strcmp(cmp.data(), str);
+    }
+
+    duint strstr(const char* addrStr, const char* str)
+    {
+        duint addr = 0;
+        if(!convertNumber(addrStr, addr, 16))
+            return 0;
+        std::vector<char> cmp(MAX_STRING_SIZE + 1);
+        DbgMemRead(addr, cmp.data(), cmp.size() - 1);
+        return ::strstr(cmp.data(), str) != nullptr;
     }
 }

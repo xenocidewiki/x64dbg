@@ -189,6 +189,7 @@ void ExpressionFunctions::Init()
 
     //String
     RegisterEasy("strcmp", strcmp);
+    RegisterEasy("strstr", strstr);
 }
 
 bool ExpressionFunctions::RegisterInt(const String & name, int argc, const CBEXPRESSIONFUNCTIONINT & cbFunction, void* userdata)
