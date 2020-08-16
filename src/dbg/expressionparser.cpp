@@ -873,30 +873,76 @@ bool ExpressionParser::Calculate(duint & value, bool signedcalc, bool allowassig
         else if(token.type() == Token::Type::Function)
         {
             const auto & name = token.data();
-            int argc;
-            bool strFunction;
-            if(!ExpressionFunctions::GetArgc(name, argc, strFunction))
+            ValueType returnType;
+            std::vector<ValueType> argTypes;
+            if(!ExpressionFunctions::GetType(name, returnType, argTypes))
                 return false;
-            if(int(stack.size()) < argc)
+            if(int(stack.size()) < argTypes.size())
                 return false;
             std::vector<ExpressionValue> argv;
-            argv.resize(argc);
-            for(auto i = 0; i < argc; i++)
+            argv.resize(argTypes.size());
+            for(auto i = 0; i < argTypes.size(); i++)
             {
                 /*duint arg;
                 if(!stack[stack.size() - 1].DoEvaluate(arg, silent, baseonly))
                     return false;*/
                 // TODO: put in EvalValue -> ExpressionValue
-                stack.pop_back();
-                ExpressionValue arg = { ValueTypeNumber, 0 };
-                argv[argc - i - 1] = arg;
+                auto & top = stack[stack.size() - i - 1];
+                ExpressionValue arg;
+                if(top.evaluated)
+                    arg = { ValueTypeNumber, top.value };
+                else
+                {
+                    arg = { ValueTypeString, 0, StringValue{top.data.c_str(), false} };
+                }
+
+                if(arg.type != argTypes[i])
+                {
+                    if(arg.type == ValueTypeString)
+                    {
+                        duint result;
+
+                        if(!top.DoEvaluate(result, silent, baseonly, value_size, isvar, hexonly))
+                            return false;
+
+                        arg.number = result;
+                        if(arg.string.isOwner)
+                            BridgeFree((void*)arg.string.ptr);
+
+                        arg.string.ptr = nullptr;
+                    }
+                    else
+                    {
+                        char str[32] = "";
+                        sprintf_s(str, "0x%p", arg.number);
+                        void* ptr = BridgeAlloc(sizeof(str));
+                        strcpy_s((char*)ptr, _countof(str), str);
+                        arg.string.ptr = (const char*)ptr;
+                        arg.string.isOwner = true;
+                    }
+
+                    arg.type = argTypes[i];
+                }
+
+                argv[argTypes.size() - i - 1] = arg;
             }
+
             ExpressionValue result = { ValueTypeNumber, 0 };
             if(!ExpressionFunctions::Call(name, result, argv))
                 return false;
-            // TODO: put back in EvalValue
-            EvalValue result2(0);
-            stack.push_back(result2);
+
+            for(size_t i = 0; i < argv.size(); i++)
+            {
+                stack.pop_back();
+            }
+            if(result.type == ValueTypeString)
+            {
+                stack.push_back(EvalValue(result.string.ptr));
+                if(result.string.isOwner)
+                    BridgeFree((void*)result.string.ptr);
+            }
+            else
+                stack.push_back(EvalValue(result.number));
         }
         else
             stack.push_back(EvalValue(token.data()));

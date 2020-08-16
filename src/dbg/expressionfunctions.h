@@ -29,23 +29,21 @@ public:
     using CBEXPRESSIONFUNCTION = std::function<bool(ExpressionValue* result, int argc, const ExpressionValue* argv, void* userdata)>;
 
     static void Init();
-    static bool RegisterInt(const String & name, int argc, const CBEXPRESSIONFUNCTIONINT & cbFunction, void* userdata = nullptr);
-    static bool RegisterStr(const String & name, int argc, const CBEXPRESSIONFUNCTIONSTR & cbFunction, void* userdata = nullptr);
+    static bool Register(const String & name, const ValueType & returnType, const std::vector<ValueType> & argTypes, const CBEXPRESSIONFUNCTION & cbFunction, void* userdata = nullptr);
     static bool RegisterAlias(const String & name, const String & alias);
     static bool Unregister(const String & name);
     static bool Call(const String & name, ExpressionValue & result, std::vector<ExpressionValue> & argv);
-    static bool GetArgc(const String & name, int & argc);
+    static bool GetType(const String & name, ValueType & returnType, std::vector<ValueType> & argTypes);
 
 private:
     struct Function
     {
         String name;
-        int argc = 0;
-        CBEXPRESSIONFUNCTIONINT cbFunctionInt;
-        CBEXPRESSIONFUNCTIONSTR cbFunctionStr;
+        ValueType returnType;
+        std::vector<ValueType> argTypes;
+        CBEXPRESSIONFUNCTION cbFunction;
         void* userdata = nullptr;
         std::vector<String> aliases;
-        bool strFunction = false;
     };
 
     static bool isValidName(const String & name);

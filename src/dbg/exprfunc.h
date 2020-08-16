@@ -1,6 +1,7 @@
 #pragma once
 
 #include "_global.h"
+#include "expressionfunctions.h"
 
 namespace Exprfunc
 {
@@ -80,6 +81,8 @@ namespace Exprfunc
     duint exinfocount();
     duint exinfo(duint index);
 
-    duint strcmp(const char* addr, const char* str);
-    duint strstr(const char* addrStr, const char* str);
+    bool strcmp(ExpressionValue* result, int argc, const ExpressionValue* argv, void* userdata);
+    bool strstr(ExpressionValue* result, int argc, const ExpressionValue* argv, void* userdata);
+    bool utf16(ExpressionValue* result, int argc, const ExpressionValue* argv, void* userdata);
+    bool utf8(ExpressionValue* result, int argc, const ExpressionValue* argv, void* userdata);
 }

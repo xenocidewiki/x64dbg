@@ -7,7 +7,7 @@
 
 std::unordered_map<String, ExpressionFunctions::Function> ExpressionFunctions::mFunctions;
 
-//Copied from https://stackoverflow.com/a/7858971/1806760
+/*//Copied from https://stackoverflow.com/a/7858971/1806760
 template<int...>
 struct seq {};
 
@@ -76,8 +76,8 @@ static bool RegisterEasy(const String & name, duint(*cbFunction)(Ts...))
     {
         return callFunc(argv, cbFunction, typename gens<sizeof...(Ts)>::type());
     };
-    /*if(!ExpressionFunctions::Register(aliases[0], sizeof...(Ts), tempFunc))
-        return false;*/
+    if(!ExpressionFunctions::Register(aliases[0], sizeof...(Ts), tempFunc))
+        return false;
     for(size_t i = 1; i < aliases.size(); i++)
         ExpressionFunctions::RegisterAlias(aliases[0], aliases[i]);
     return true;
@@ -85,7 +85,7 @@ static bool RegisterEasy(const String & name, duint(*cbFunction)(Ts...))
 
 void ExpressionFunctions::Init()
 {
-    //TODO: register more functions
+   //TODO: register more functions
     using namespace Exprfunc;
 
     //GUI interaction
@@ -190,9 +190,18 @@ void ExpressionFunctions::Init()
     //String
     RegisterEasy("strcmp", strcmp);
     RegisterEasy("strstr", strstr);
+
+}*/
+
+void ExpressionFunctions::Init()
+{
+    ExpressionFunctions::Register("strcmp", ValueTypeNumber, { ValueTypeString, ValueTypeString }, Exprfunc::strcmp, nullptr);
+    ExpressionFunctions::Register("strstr", ValueTypeNumber, { ValueTypeString, ValueTypeString }, Exprfunc::strstr, nullptr);
+    ExpressionFunctions::Register("utf16", ValueTypeString, { ValueTypeNumber }, Exprfunc::utf16, nullptr);
+    ExpressionFunctions::Register("utf8", ValueTypeString, { ValueTypeNumber }, Exprfunc::utf8, nullptr);
 }
 
-bool ExpressionFunctions::RegisterInt(const String & name, int argc, const CBEXPRESSIONFUNCTIONINT & cbFunction, void* userdata)
+bool ExpressionFunctions::Register(const String & name, const ValueType & returnType, const std::vector<ValueType> & argTypes, const CBEXPRESSIONFUNCTION & cbFunction, void* userdata)
 {
     if(!isValidName(name))
         return false;
@@ -201,29 +210,10 @@ bool ExpressionFunctions::RegisterInt(const String & name, int argc, const CBEXP
         return false;
     Function f;
     f.name = name;
-    f.argc = argc;
-    f.cbFunctionInt = cbFunction;
-    f.cbFunctionStr = nullptr;
+    f.argTypes = argTypes;
+    f.returnType = returnType;
+    f.cbFunction = cbFunction;
     f.userdata = userdata;
-    f.strFunction = false;
-    mFunctions[name] = f;
-    return true;
-}
-
-bool ExpressionFunctions::RegisterStr(const String & name, int argc, const CBEXPRESSIONFUNCTIONSTR & cbFunction, void* userdata)
-{
-    if(!isValidName(name))
-        return false;
-    EXCLUSIVE_ACQUIRE(LockExpressionFunctions);
-    if(mFunctions.count(name))
-        return false;
-    Function f;
-    f.name = name;
-    f.argc = argc;
-    f.cbFunctionInt = nullptr;
-    f.cbFunctionStr = cbFunction;
-    f.userdata = userdata;
-    f.strFunction = true;
     mFunctions[name] = f;
     return true;
 }
@@ -234,16 +224,10 @@ bool ExpressionFunctions::RegisterAlias(const String & name, const String & alia
     auto found = mFunctions.find(name);
     if(found == mFunctions.end())
         return false;
-    if(found->second.strFunction)
-    {
-        if(!RegisterStr(alias, found->second.argc, found->second.cbFunctionStr, found->second.userdata))
-            return false;
-    }
-    else
-    {
-        if(!RegisterInt(alias, found->second.argc, found->second.cbFunctionInt, found->second.userdata))
-            return false;
-    }
+
+    if(!Register(alias, found->second.returnType, found->second.argTypes, found->second.cbFunction, found->second.userdata))
+        return false;
+
     found->second.aliases.push_back(alias);
     return true;
 }
@@ -268,35 +252,27 @@ bool ExpressionFunctions::Call(const String & name, ExpressionValue & result, st
     if(found == mFunctions.end())
         return false;
     const auto & f = found->second;
-    if(f.argc != int(argv.size()) || f.strFunction)
+    if(f.argTypes.size() != int(argv.size()))
         return false;
-    // TODO: check return value?
-    return f.cbFunction(&result, f.argc, argv.data(), f.userdata);
+    for(size_t i = 0; i < argv.size(); i++)
+    {
+        if(argv[i].type != f.argTypes[i])
+            return false;
+    }
+    return f.cbFunction(&result, argv.size(), argv.data(), f.userdata);
 }
 
-bool ExpressionFunctions::CallStr(const String & name, std::vector<const char*> & argv, duint & result)
+bool ExpressionFunctions::GetType(const String & name, ValueType & returnType, std::vector<ValueType> & argTypes)
 {
     SHARED_ACQUIRE(LockExpressionFunctions);
     auto found = mFunctions.find(name);
     if(found == mFunctions.end())
         return false;
-    const auto & f = found->second;
-    if(f.argc != int(argv.size()) || !f.strFunction)
-        return false;
-    result = f.cbFunctionStr(f.argc, argv.data(), f.userdata);
+    returnType = found->second.returnType;
+    argTypes = found->second.argTypes;
     return true;
 }
 
-bool ExpressionFunctions::GetArgc(const String & name, int & argc, bool & strFunction)
-{
-    SHARED_ACQUIRE(LockExpressionFunctions);
-    auto found = mFunctions.find(name);
-    if(found == mFunctions.end())
-        return false;
-    argc = found->second.argc;
-    strFunction = found->second.strFunction;
-    return true;
-}
 
 bool ExpressionFunctions::isValidName(const String & name)
 {
